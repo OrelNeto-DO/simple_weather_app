@@ -5,7 +5,7 @@ import os
 app = Flask(__name__)
 
 # OpenWeatherMap API configuration
-API_KEY = os.getenv('WEATHER_API_KEY', 'your-api-key-here')
+API_KEY = os.getenv('WEATHER_API_KEY', '40392cb50e8faa1b5dd5822ab9e06913')
 BASE_URL = "http://api.openweathermap.org/data/2.5/weather"
 
 WINTER_FACTS = [

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern Weather App</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header class="app-header">
+            <h1>Weather Explorer</h1>
+        </header>
+
+        <div class="search-card">
+            <form method="POST" class="weather-form">
+                <div class="input-group">
+                    <input type="text" name="city" placeholder="Enter city name" required>
+                </div>
+                <div class="input-group">
+                    <input type="text" name="country" placeholder="Country code (e.g., IL)" required>
+                </div>
+                <button type="submit" class="submit-btn">Get Weather</button>
+            </form>
+        </div>
+
+        {% if error %}
+        <div class="error-message">
+            {{ error }}
+        </div>
+        {% endif %}
+
+        {% if weather %}
+        <div class="weather-card">
+            <h2>Current Weather in {{ weather.name }}, {{ weather.sys.country }}</h2>
+            <div class="weather-info">
+                <div class="weather-item">
+                    <h3>Temperature</h3>
+                    <p>{{ weather.main.temp }}°C</p>
+                </div>
+                <div class="weather-item">
+                    <h3>Feels Like</h3>
+                    <p>{{ weather.main.feels_like }}°C</p>
+                </div>
+                <div class="weather-item">
+                    <h3>Conditions</h3>
+                    <p>{{ weather.weather[0].description|title }}</p>
+                </div>
+                <div class="weather-item">
+                    <h3>Humidity</h3>
+                    <p>{{ weather.main.humidity }}%</p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="facts-card">
+            <h2 class="facts-title">❄️ Winter Facts ❄️</h2>
+            <ul class="facts-list">
+                {% for fact in winter_facts %}
+                <li class="fact-item">{{ fact }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</body>
+</html>
