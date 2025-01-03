@@ -20,10 +20,22 @@ pipeline {
             }
         }
         
+        stage('Docker Login') {
+            steps {
+                script {
+                    sh '''
+                        echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin
+                    '''
+                }
+            }
+        }
+        
         stage('Build') {
             steps {
                 script {
-                    docker.build("${env.DOCKERHUB_CREDENTIALS_USR}/${DOCKER_IMAGE}:${BUILD_NUMBER}")
+                    sh '''
+                        docker build -t $DOCKERHUB_CREDENTIALS_USR/$DOCKER_IMAGE:$BUILD_NUMBER .
+                    '''
                 }
             }
         }
@@ -32,7 +44,7 @@ pipeline {
             steps {
                 script {
                     sh '''
-                        docker run -d --name weather_test_${BUILD_NUMBER} ${DOCKERHUB_CREDENTIALS_USR}/${DOCKER_IMAGE}:${BUILD_NUMBER}
+                        docker run -d --name weather_test_${BUILD_NUMBER} $DOCKERHUB_CREDENTIALS_USR/$DOCKER_IMAGE:$BUILD_NUMBER
                         sleep 10
                         docker ps | grep weather_test_${BUILD_NUMBER}
                         docker stop weather_test_${BUILD_NUMBER}
@@ -46,8 +58,7 @@ pipeline {
             steps {
                 script {
                     sh '''
-                        echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin
-                        docker push ${DOCKERHUB_CREDENTIALS_USR}/${DOCKER_IMAGE}:${BUILD_NUMBER}
+                        docker push $DOCKERHUB_CREDENTIALS_USR/$DOCKER_IMAGE:$BUILD_NUMBER
                     '''
                 }
             }
@@ -58,7 +69,7 @@ pipeline {
         always {
             script {
                 sh '''
-                    docker rmi ${DOCKERHUB_CREDENTIALS_USR}/${DOCKER_IMAGE}:${BUILD_NUMBER} || true
+                    docker rmi $DOCKERHUB_CREDENTIALS_USR/$DOCKER_IMAGE:$BUILD_NUMBER || true
                     docker logout
                 '''
             }
