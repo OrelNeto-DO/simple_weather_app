@@ -4,6 +4,7 @@ pipeline {
     environment {
         DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials')
         DOCKER_IMAGE = 'simple_weather_app'
+        APP_PORT = '5000'
     }
     
     stages {
@@ -44,9 +45,27 @@ pipeline {
             steps {
                 script {
                     sh '''
-                        docker run -d --name weather_test_${BUILD_NUMBER} $DOCKERHUB_CREDENTIALS_USR/$DOCKER_IMAGE:$BUILD_NUMBER
-                        sleep 10
-                        docker ps | grep weather_test_${BUILD_NUMBER}
+                        # Run the container
+                        docker run -d -p $APP_PORT:$APP_PORT --name weather_test_${BUILD_NUMBER} $DOCKERHUB_CREDENTIALS_USR/$DOCKER_IMAGE:$BUILD_NUMBER
+
+                        # Wait for application to start
+                        echo "Waiting for application to start..."
+                        sleep 15
+
+                        # Basic connectivity test
+                        echo "Testing basic connectivity..."
+                        curl -f http://localhost:$APP_PORT || exit 1
+                        
+                        # Test homepage content
+                        echo "Testing homepage content..."
+                        curl -s http://localhost:$APP_PORT | grep "Weather Explorer" || exit 1
+                        
+                        # Test weather API endpoint (optional, depends on your app structure)
+                        # curl -X POST -H "Content-Type: application/x-www-form-urlencoded" -d "city=London&country=UK" http://localhost:$APP_PORT
+
+                        echo "All tests passed successfully!"
+
+                        # Cleanup
                         docker stop weather_test_${BUILD_NUMBER}
                         docker rm weather_test_${BUILD_NUMBER}
                     '''
