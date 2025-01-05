@@ -35,7 +35,11 @@ pipeline {
             steps {
                 script {
                     sh '''
+                        # Build with BUILD_NUMBER tag
                         docker build -t $DOCKERHUB_CREDENTIALS_USR/$DOCKER_IMAGE:$BUILD_NUMBER .
+                        
+                        # Tag also as latest
+                        docker tag $DOCKERHUB_CREDENTIALS_USR/$DOCKER_IMAGE:$BUILD_NUMBER $DOCKERHUB_CREDENTIALS_USR/$DOCKER_IMAGE:latest
                     '''
                 }
             }
@@ -47,11 +51,9 @@ pipeline {
                     sh '''
                         # Run the container
                         docker run -d -p $APP_PORT:$APP_PORT --name weather_test_${BUILD_NUMBER} $DOCKERHUB_CREDENTIALS_USR/$DOCKER_IMAGE:$BUILD_NUMBER
-
                         # Wait for application to start
                         echo "Waiting for application to start..."
                         sleep 15
-
                         # Basic connectivity test
                         echo "Testing basic connectivity..."
                         curl -f http://localhost:$APP_PORT || exit 1
@@ -60,11 +62,7 @@ pipeline {
                         echo "Testing homepage content..."
                         curl -s http://localhost:$APP_PORT | grep "Weather Explorer" || exit 1
                         
-                        # Test weather API endpoint (optional, depends on your app structure)
-                        # curl -X POST -H "Content-Type: application/x-www-form-urlencoded" -d "city=London&country=UK" http://localhost:$APP_PORT
-
                         echo "All tests passed successfully!"
-
                         # Cleanup
                         docker stop weather_test_${BUILD_NUMBER}
                         docker rm weather_test_${BUILD_NUMBER}
@@ -77,7 +75,15 @@ pipeline {
             steps {
                 script {
                     sh '''
+                        # Push version with BUILD_NUMBER
                         docker push $DOCKERHUB_CREDENTIALS_USR/$DOCKER_IMAGE:$BUILD_NUMBER
+                        
+                        # Push latest version
+                        docker push $DOCKERHUB_CREDENTIALS_USR/$DOCKER_IMAGE:latest
+                        
+                        echo "Successfully pushed images:"
+                        echo "- $DOCKERHUB_CREDENTIALS_USR/$DOCKER_IMAGE:$BUILD_NUMBER"
+                        echo "- $DOCKERHUB_CREDENTIALS_USR/$DOCKER_IMAGE:latest"
                     '''
                 }
             }
@@ -88,7 +94,9 @@ pipeline {
         always {
             script {
                 sh '''
+                    # Remove both tags
                     docker rmi $DOCKERHUB_CREDENTIALS_USR/$DOCKER_IMAGE:$BUILD_NUMBER || true
+                    docker rmi $DOCKERHUB_CREDENTIALS_USR/$DOCKER_IMAGE:latest || true
                     docker logout
                 '''
             }
