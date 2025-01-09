@@ -30,7 +30,7 @@ jobs:
       uses: docker/build-push-action@v3
       with:
         push: true
-        tags: index.docker.io/${{ secrets.AzureAppService_ContainerUsername_78c71b0e82064deeb0f1f4bacf546234 }}/simple_weather_app:${{ github.sha }}
+        tags: index.docker.io/${{ DOCKERHUB_USERNAME }}/simple_weather_app:${{ github.sha }}
         file: ./Dockerfile
 
   deploy:
