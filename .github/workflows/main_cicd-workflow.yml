@@ -48,4 +48,4 @@ jobs:
         app-name: 'cicd-workflow'
         slot-name: 'production'
         publish-profile: ${{ secrets.AzureAppService_PublishProfile_bfaa8df7f1024c3ebf1c562b81aa8474 }}
-        images: 'index.docker.io/${{ secrets.AzureAppService_ContainerUsername_78c71b0e82064deeb0f1f4bacf546234 }}/simple_weather_app:${{ github.sha }}'
+        images: 'index.docker.io/${{ secrets.DOCKERHUB_USERNAME }}/simple_weather_app:${{ github.sha }}'
