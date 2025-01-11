@@ -1,66 +1,62 @@
 name: CI/CD Pipeline for Simple Weather App
-
 on:
   push:
     branches:
       - main
-
 jobs:
   build-test-deploy:
     name: Build, Test, and Deploy
     runs-on: ubuntu-latest
-
     env:
       DOCKER_IMAGE: simple_weather_app
       APP_PORT: 5000
       VERSION: "1.0.${{ github.run_number }}"
       AZURE_VM_IP: ${{ secrets.AZURE_VM_IP }}
       AZURE_VM_USER: ${{ secrets.AZURE_VM_USER }}
-    
     steps:
     - name: Checkout Code
       uses: actions/checkout@v3
-
-    - name: Set up SSH key for Azure VM
-      run: |
-        mkdir -p ~/.ssh
-        echo "${{ secrets.AZURE_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-        chmod 600 ~/.ssh/id_rsa
-        ssh-keyscan -H ${{ secrets.AZURE_VM_IP }} >> ~/.ssh/known_hosts
-
+    
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v2
-
+    
     - name: Log in to DockerHub
       uses: docker/login-action@v2
       with:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
-
+    
     - name: Build Docker Image
       run: |
         docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKER_IMAGE }}:${{ env.VERSION }} .
         docker tag ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKER_IMAGE }}:${{ env.VERSION }} ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKER_IMAGE }}:latest
-
+    
     - name: Push Docker Image to DockerHub
       run: |
         docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKER_IMAGE }}:${{ env.VERSION }}
         docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKER_IMAGE }}:latest
-
+    
+    - name: Set up SSH
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        ssh-keyscan -H ${{ secrets.AZURE_VM_IP }} >> ~/.ssh/known_hosts
+    
     - name: Deploy to Azure Virtual Machine
       run: |
-        ssh -o StrictHostKeyChecking=no ${{ secrets.AZURE_VM_USER }}@${{ secrets.AZURE_VM_IP }} << 'EOF'
+        ssh -i ~/.ssh/id_rsa ${{ secrets.AZURE_VM_USER }}@${{ secrets.AZURE_VM_IP }} << 'EOF'
         docker pull ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKER_IMAGE }}:${{ env.VERSION }}
         docker stop simple_weather_app || true
         docker rm simple_weather_app || true
         docker run -d -p ${{ env.APP_PORT }}:5000 --name simple_weather_app ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKER_IMAGE }}:${{ env.VERSION }}
         EOF
-
+    
     - name: Verify Deployment
       run: |
-        ssh -o StrictHostKeyChecking=no ${{ secrets.AZURE_VM_USER }}@${{ secrets.AZURE_VM_IP }} curl -f http://localhost:${{ env.APP_PORT }} || exit 1
+        ssh -i ~/.ssh/id_rsa ${{ secrets.AZURE_VM_USER }}@${{ secrets.AZURE_VM_IP }} curl -f http://localhost:${{ env.APP_PORT }} || exit 1
         echo "Application is successfully deployed and accessible at http://${{ secrets.AZURE_VM_IP }}:${{ env.APP_PORT }}"
-
+    
     - name: Clean up Local Docker Images
       run: |
         docker rmi ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKER_IMAGE }}:${{ env.VERSION }} || true
