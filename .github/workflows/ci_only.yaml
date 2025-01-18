@@ -29,6 +29,21 @@ jobs:
         docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKER_IMAGE }}:${{ env.VERSION }} .
         docker tag ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKER_IMAGE }}:${{ env.VERSION }} ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKER_IMAGE }}:latest
     
+    - name: Run Docker Container for Testing
+      run: |
+        docker run -d --name weather_app_test -p 5000:5000 ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKER_IMAGE }}:${{ env.VERSION }}
+        sleep 5  # Wait for the container to start
+
+    - name: Test Application with Curl
+      run: |
+        curl -f http://localhost:5000 || (echo "Application test failed" && docker logs weather_app_test && exit 1)
+
+    - name: Stop and Remove Test Container
+      if: always()
+      run: |
+        docker stop weather_app_test
+        docker rm weather_app_test
+
     - name: Push Docker Image to DockerHub
       run: |
         docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKER_IMAGE }}:${{ env.VERSION }}
