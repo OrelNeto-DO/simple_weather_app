@@ -14,21 +14,13 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Set up kubectl
-        uses: azure/setup-kubectl@v1
-        with:
-          kubeconfig: ${{ secrets.KUBECONFIG }}
-
-      - name: Build Docker image
         run: |
-          docker build -t weather-app .
-      
-      - name: Push Docker image to Docker Hub (optional)
-        run: |
-          docker tag weather-app <your-dockerhub-username>/weather-app:latest
-          docker push <your-dockerhub-username>/weather-app:latest
+          echo "${{ secrets.KUBECONFIG }}" > kubeconfig.yaml
+          export KUBECONFIG=kubeconfig.yaml
 
       - name: Apply Kubernetes deployment
         run: |
+          # Apply the deployment and service files
           kubectl apply -f weather-app-deployment.yaml
           kubectl apply -f weather-app-service.yaml
 
