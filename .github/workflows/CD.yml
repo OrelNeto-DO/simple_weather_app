@@ -1,0 +1,37 @@
+name: Deploy to Kubernetes
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v1
+        with:
+          kubeconfig: ${{ secrets.KUBECONFIG }}
+
+      - name: Build Docker image
+        run: |
+          docker build -t weather-app .
+      
+      - name: Push Docker image to Docker Hub (optional)
+        run: |
+          docker tag weather-app <your-dockerhub-username>/weather-app:latest
+          docker push <your-dockerhub-username>/weather-app:latest
+
+      - name: Apply Kubernetes deployment
+        run: |
+          kubectl apply -f weather-app-deployment.yaml
+          kubectl apply -f weather-app-service.yaml
+
+      - name: Check deployment status
+        run: |
+          kubectl rollout status deployment/weather-app
