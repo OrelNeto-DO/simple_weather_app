@@ -1,29 +1,45 @@
 name: Deploy to Kubernetes
-
 on:
   push:
     branches:
       - main
+    paths:
+      - 'weather-app-deployment.yaml'
+      - 'weather-app-service.yaml'
+  workflow_dispatch:  # מאפשר הרצה ידנית
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Set up kubectl
+      - name: Install kubectl
         run: |
-          echo "${{ secrets.KUBECONFIG }}" > kubeconfig.yaml
-          export KUBECONFIG=kubeconfig.yaml
-
-      - name: Apply Kubernetes deployment
+          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+      
+      - name: Configure kubectl
         run: |
-          # Apply the deployment and service files
-          kubectl apply -f weather-app-deployment.yaml
-          kubectl apply -f weather-app-service.yaml
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
+          chmod 600 ~/.kube/config
+          
+      - name: Verify cluster connection
+        run: kubectl cluster-info
 
+      - name: Deploy to Kubernetes
+        run: |
+          kubectl apply -f weather-app-deployment.yaml --validate=false
+          kubectl apply -f weather-app-service.yaml --validate=false
+          
       - name: Check deployment status
         run: |
           kubectl rollout status deployment/weather-app
+          kubectl get pods -l app=weather-app
+          kubectl get service weather-app-service
+
+      - name: Print service URL
+        run: |
+          echo "Service exposed on NodePort: $(kubectl get service weather-app-service -o jsonpath='{.spec.ports[0].nodePort}')"
