@@ -1,7 +1,7 @@
 name: CD to Local Kubernetes
 on:
   workflow_run:
-    workflows: ["CI"]  # שם זה צריך להתאים לשם של ה-CI workflow שלך
+    workflows: ["CI Pipeline for Simple Weather App"]  # שיניתי את זה להתאים לשם המדויק
     types:
       - completed
     branches:
@@ -9,9 +9,8 @@ on:
 
 jobs:
   deploy:
-    runs-on: self-hosted  # זה הקו החשוב - זה אומר להשתמש ב-runner המקומי
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}  # רץ רק אם ה-CI הצליח
-
+    runs-on: self-hosted
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
