@@ -3,7 +3,7 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch:  # מאפשר הרצה ידנית
+  workflow_dispatch:
 
 jobs:
   deploy:
@@ -24,7 +24,9 @@ jobs:
           chmod 600 ~/.kube/config
           
       - name: Verify cluster connection
-        run: kubectl cluster-info
+        run: |
+          kubectl config set-cluster docker-desktop --insecure-skip-tls-verify=true
+          kubectl cluster-info
 
       - name: Deploy to Kubernetes
         run: |
