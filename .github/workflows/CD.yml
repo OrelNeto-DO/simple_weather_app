@@ -3,9 +3,6 @@ on:
   push:
     branches:
       - main
-    paths:
-      - 'weather-app-deployment.yaml'
-      - 'weather-app-service.yaml'
   workflow_dispatch:  # מאפשר הרצה ידנית
 
 jobs:
