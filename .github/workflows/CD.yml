@@ -1,32 +1,20 @@
-name: Deploy to Kubernetes
+name: CD to Local Kubernetes
 on:
-  push:
+  workflow_run:
+    workflows: ["CI"]  # שם זה צריך להתאים לשם של ה-CI workflow שלך
+    types:
+      - completed
     branches:
       - main
-  workflow_dispatch:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted  # זה הקו החשוב - זה אומר להשתמש ב-runner המקומי
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}  # רץ רק אם ה-CI הצליח
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-
-      - name: Install kubectl
-        run: |
-          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-          sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
-      
-      - name: Configure kubectl
-        run: |
-          mkdir -p ~/.kube
-          echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
-          chmod 600 ~/.kube/config
-          
-      - name: Verify cluster connection
-        run: |
-          kubectl config set-cluster docker-desktop --insecure-skip-tls-verify=true
-          kubectl cluster-info
 
       - name: Deploy to Kubernetes
         run: |
